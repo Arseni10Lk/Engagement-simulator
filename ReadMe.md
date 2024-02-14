@@ -24,11 +24,11 @@ Target speed | 1000 m/s
 Then we can obtain two general visualizations:
 Full engagement:
 <p>
-https://github.com/Arseni10Lk/Engagement-simulator/blob/master/Media/Full_engagement_20deg_HE_True.avi
+https://github.com/Arseni10Lk/Engagement-simulator/blob/master/Media/Full_engagement_20deg_HE_True.mp4
 </p>
 Engagement zoomed on the pursuer: 
 <p>
-https://github.com/Arseni10Lk/Engagement-simulator/blob/master/Media/Zoomed_engagement_20deg_HE_True.avi
+https://github.com/Arseni10Lk/Engagement-simulator/blob/master/Media/Zoomed_engagement_20deg_HE_True.mp4
 </p>
 
 
