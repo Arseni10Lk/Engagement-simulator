@@ -23,13 +23,13 @@ Target speed | 1000 m/s
 
 Then we can obtain two general visualizations:
 Full engagement:
-<p>
+
 https://github.com/Arseni10Lk/Engagement-simulator/assets/141524111/d9014651-1566-4b15-bf9b-2f820ea5f915
-</p>
+
 Engagement zoomed on the pursuer: 
-<p>
+
 https://github.com/Arseni10Lk/Engagement-simulator/assets/141524111/b66eb4b1-8300-4b37-958b-ceecf4dba833
-</p>
+
 
 
 And visualizations of particular parameter values:
