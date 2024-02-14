@@ -125,10 +125,10 @@ if strcmp(engagement_plots, 'on')
 
 
     figure(2)
-    plot(t(1:miss_index), aM(1:miss_index)./32.2, 'LineWidth', 2)
+    plot(t(1:miss_index), aM(1:miss_index)./9.81, 'LineWidth', 2)
     xlabel('Time [s]', 'FontSize', 16)
     ylabel('Accelaration [g]', 'FontSize', 16)
-    set(gca, 'fontsize', 16, 'ylim', [0 20]);
+    set(gca, 'fontsize', 16, 'ylim', [0 60]);
     set(gcf, 'color', 'w');
     grid on
 
