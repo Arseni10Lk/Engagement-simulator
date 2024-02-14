@@ -6,15 +6,15 @@ close all
 
 
 % Visualisation data
-engagement_plots = 'off';
-full_scale_engagement_viz = 'on';
-zoomed_engagement_viz = 'on';
+engagement_plots = 'on';
+full_scale_engagement_viz = 'off';
+zoomed_engagement_viz = 'off';
 
-vid_file = 'on';
+vid_file = 'off';
 
 
 % initial conditions
-PN_type = 'Pure';
+PN_type = 'True';
 at = 0;
 HE = -20*pi/180; % rad
 N = 3;
