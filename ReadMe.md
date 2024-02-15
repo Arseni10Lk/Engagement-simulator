@@ -12,7 +12,7 @@ In case program compiles with the following initial conditions:
 Parameter | Value
 -----|---------
 Pro-Nav type | True
-Target accelareration | 0
+Target acceleration | 0
 Heading error | -20°
 Proportianility const N | 3
 ∠(Target Velocity, horizon) |  0
@@ -41,3 +41,23 @@ Closing Velocity | <img src = "./Media/VC.png" alt = "Closing velocity" width = 
 Pursuer acceleration | <img src = "./Media/aP.png" alt = "Pursuer acceleration" width = 500>
 
 In order to see results for different initial conditions you have to change the first section with the initial conditions (obviously) and also the third section wth visualizations.
+
+For example, by editing several lines of the code we can obtain animations for the same initial conditions, but with
+Parameter | Value
+-----|---------
+Pro-Nav type | Pure
+Target acceleration | 20g
+
+And let the acceleration be perpendicular to the velocity vector.
+
+Thus, the results of the siulation will look in the following way:
+
+Full engagement:
+
+https://github.com/Arseni10Lk/Engagement-simulator/assets/141524111/06d3c6ec-99d9-4fe2-a485-0c0af9ec847f
+
+Engagement zoomed on the pursuer: 
+
+https://github.com/Arseni10Lk/Engagement-simulator/assets/141524111/58784efc-ea69-43b9-a663-0f0741030e5a
+
+
