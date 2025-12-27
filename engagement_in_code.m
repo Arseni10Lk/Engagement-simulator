@@ -12,97 +12,115 @@ zoomed_engagement_viz = 'off';
 
 vid_file = 'off';
 
-
 % initial conditions
 PN_type = 'True';
-at = 0;
-HE = -20*pi/180; % rad
+at = [0, 0, 0]; % x y z
+
+HE_pitch = -20*pi/180;
+HE_yaw = -20*pi/180;
+
 N = 3;
-tf = 12;
+time_final = 12;
 t_step = 0.01;
 
-beta = 0; % rad
-Rtx = 40000; % m
-Rty = 10000; % m
-Rpx = 0; % m
-Rpy = 10000; % m
+target_pitch = 20*pi/180;
+target_yaw = 0;
 
-VP = 4000; % m/s
-Vt = 1000; % m/s
+Rt = [40000, 10000, 0]; % x y z [m]
+Rp = [0    , 10000, 0]; % x y z [m]
+
+VP_mag = 4000; % m/s
+Vt_mag = 1000; % m/s
 
 % calculation of dependent inital conditions
-Vtx = -Vt*cos(beta);
-Vty = Vt*sin(beta);
+Vt = zeros(1, 3);
+Vt(1) = -Vt_mag*cos(target_pitch)*cos(target_yaw);
+Vt(2) = Vt_mag*sin(target_pitch);
+Vt(3) = Vt_mag*cos(target_pitch)*sin(target_yaw);
 
-RTMx = Rtx - Rpx;
-RTMy = Rty - Rpy;
+RTM = Rt - Rp;
 
-lambda = atan2(RTMy, RTMx); % rad
+lambda_pitch = atan2(RTM(2), RTM(1)); % rad
+lambda_yaw = atan2(RTM(3), RTM(1)); % rad
 
-Lead_angle = asin(Vt*sin(beta + lambda)/VP); % rad
+Lead_angle_pitch = asin(Vt_mag*sin(target_pitch + lambda_pitch)/VP_mag); % rad
+Lead_angle_yaw = asin(Vt_mag*cos(target_pitch)*sin(target_yaw + lambda_yaw)/VP_mag/cos(Lead_angle_pitch)); % rad
 
-Vpx = VP*cos(Lead_angle + lambda + HE); % m/s 
-Vpy = VP*sin(Lead_angle + lambda + HE); % m/s
-
+Vpx = VP_mag*cos(Lead_angle_pitch + lambda_pitch + HE_pitch)*cos(Lead_angle_yaw + lambda_yaw + HE_yaw); % m/s 
+Vpy = VP_mag*sin(Lead_angle_pitch + lambda_pitch + HE_pitch); % m/s
+Vpz = VP_mag*cos(Lead_angle_pitch + lambda_pitch + HE_pitch)*sin(Lead_angle_yaw + lambda_yaw + HE_yaw); % m/s
+Vp = [Vpx, Vpy, Vpz];
 
 % Vector with Initial conditions
 
-y0 = [beta, Rtx, Rty, Rpx, Rpy, Vtx, Vty, Vpx, Vpy]';
+y0 = [Rt, Rp, Vt, Vp]';
 
 % application of ProNav laws
-t = 0:t_step:tf-t_step; lt = length(t);
+time = 0:t_step:time_final-t_step; 
+length_time = length(time);
 
-Con_vs_t = zeros(length(y0), lt);
-Con_vs_t(:, 1) =  y0; 
+Con_vs_t = zeros(length(y0), length_time); 
 
 % Integration with RK4
 Actual_state = y0;
-Con_vs_t = Actual_state;
-for j = 1 : lt-1
-    s1 = nlinpronav_sim(t(j), Actual_state, HE, N, at, VP, PN_type);
-    s2 = nlinpronav_sim(t(j)+t_step/2, Actual_state + t_step*s1/2, HE, N, at, VP, PN_type);
-    s3 = nlinpronav_sim(t(j)+t_step/2, Actual_state + t_step*s2/2, HE, N, at, VP, PN_type);
-    s4 = nlinpronav_sim(t(j) + t_step, Actual_state + t_step*s3, HE, N, at, VP, PN_type);
+Con_vs_t(:, 1) = Actual_state;
+for j = 1 : length_time-1
+
+    s1 = nlinpronav_sim(Actual_state, N, at, PN_type);
+    s2 = nlinpronav_sim(Actual_state + t_step*s1/2, N, at, PN_type);
+    s3 = nlinpronav_sim(Actual_state + t_step*s2/2, N, at, PN_type);
+    s4 = nlinpronav_sim(Actual_state + t_step*s3, N, at, PN_type);
+
     Actual_state = Actual_state + t_step*(s1+2*s2+2*s3+s4)/6;
-    Con_vs_t = [Con_vs_t, Actual_state];
+
+    Con_vs_t(:, j + 1) = Actual_state;
 end
-Actual_state = Con_vs_t';
+
+Actual_state_history = Con_vs_t';
 
 % Processing simulation results
 
-sel_beta = 1;
-sel_Rtx = 2;
-sel_Rty = 3;
-sel_Rpx  = 4;
-sel_Rpy = 5;
-sel_Vtx = 6;
-sel_Vty = 7;
-sel_Vpx = 8;
-sel_Vpy = 9;
+sel_RT = 1:3;
+sel_RM = 4:6;
+sel_VT = 7:9;
+sel_VM = 10:12;
 
-VP = sqrt(Actual_state(:, sel_Vpx).^2+Actual_state(:,sel_Vpy).^2);
-Vt = sqrt(Actual_state(:, sel_Vtx).^2+Actual_state(:,sel_Vty).^2);
+VP_mag = vecnorm(Actual_state_history(:, sel_VM), 2, 2);
+Vt_mag = vecnorm(Actual_state_history(:, sel_VT), 2, 2);
 
-RTMx = Actual_state(:, sel_Rtx)-Actual_state(:, sel_Rpx);
-RTMy = Actual_state(:, sel_Rty)-Actual_state(:, sel_Rpy);
-VTM1 = Actual_state(:, sel_Vtx)-Actual_state(:, sel_Vpx);
-VTM2 = Actual_state(:, sel_Vty)-Actual_state(:, sel_Vpy);
+RTM = Actual_state_history(:, sel_RT)-Actual_state_history(:, sel_RM);
+VTM = Actual_state_history(:, sel_VT)-Actual_state_history(:, sel_VM);
 
-RTM = sqrt(RTMy.^2+RTMx.^2);
+LOS_rate = cross(RTM, VTM, 2)./vecnorm(RTM, 2, 2).^2;
 
-lambda = atan2(RTMy, RTMx);
-lambda_dot = (RTMx.*VTM2 - RTMy.*VTM1)./RTM.^2;
-
-VC = -(RTMx.*VTM1 + RTMy.*VTM2)./RTM;
+VC_hist = -dot(RTM, VTM, 2)./vecnorm(RTM, 2, 2);
 
 if strcmp(PN_type, 'True')
-    aM = N*VC.*lambda_dot;
+    ref_vecs = RTM;
+    vel_term = VC_hist;
 elseif strcmp(PN_type, 'Pure')
-    aM = N*VP.*lambda_dot;
+    ref_vecs = Actual_state_history(:, sel_VM);
+    vel_term = vecnorm(ref_vecs, 2, 2); % Missile Speed
 else
-    disp("Wrong type");
-    return
+    error("Wrong type");
 end
+
+% Normalize Reference Vectors (Nx3)
+u_fwd_hist = ref_vecs ./ vecnorm(ref_vecs, 2, 2);
+global_up = [0, 1, 0]; % 1x3 Row for expansion
+
+% Calculate Right Vector (Nx3)
+u_right_hist = cross(u_fwd_hist, repmat(global_up, length(u_fwd_hist), 1), 2);
+u_right_hist = u_right_hist ./ vecnorm(u_right_hist, 2, 2);
+
+% Calculate Local Up Vector (Nx3)
+u_local_up_hist = cross(u_right_hist, u_fwd_hist, 2);
+u_local_up_hist = u_local_up_hist ./ vecnorm(u_local_up_hist, 2, 2);
+
+% 5. Project LOS Rate onto the Local Axes
+%    Now we can correctly dot the Nx3 rate with the Nx3 basis vectors
+lambda_dot_pitch = dot(LOS_rate, u_right_hist, 2);
+lambda_dot_yaw   = dot(LOS_rate, u_local_up_hist, 2);
 
 % Visualization
 dt_index = .1/t_step;
@@ -125,7 +143,7 @@ if strcmp(engagement_plots, 'on')
 
 
     figure(2)
-    plot(t(1:miss_index), aM(1:miss_index)./9.81, 'LineWidth', 2)
+    plot(time(1:miss_index), aM(1:miss_index)./9.81, 'LineWidth', 2)
     xlabel('Time [s]', 'FontSize', 16)
     ylabel('Accelaration [g]', 'FontSize', 16)
     set(gca, 'fontsize', 16, 'ylim', [0 60]);
@@ -133,7 +151,7 @@ if strcmp(engagement_plots, 'on')
     grid on
 
     figure(3)
-    plot(t, VC, 'LineWidth', 2);
+    plot(time, VC_hist, 'LineWidth', 2);
     xlabel('Time [s]', 'FontSize', 16)
     ylabel('Closing velocity [m/s]', 'FontSize', 16)
     set(gca, 'fontsize', 16, 'ylim', [4000 5000]);
@@ -141,7 +159,7 @@ if strcmp(engagement_plots, 'on')
     grid on
 
     figure(4)
-    plot(t, lambda_dot*180/pi, 'b', 'LineWidth', 2);
+    plot(time, lambda_dot*180/pi, 'b', 'LineWidth', 2);
     xlabel('Time [s]', 'FontSize', 16)
     ylabel('LOS rate [m/s]', 'FontSize', 16)
     set(gca, 'fontsize', 16, 'ylim', [-5 5]);
@@ -149,7 +167,7 @@ if strcmp(engagement_plots, 'on')
     grid on
 
     figure(5)
-    semilogy(t, RTM, 'b', 'LineWidth', 2);
+    semilogy(time, RTM, 'b', 'LineWidth', 2);
     xlabel('Time [s]', 'FontSize', 16)
     ylabel('RTM [m]', 'FontSize', 16)
     set(gca, 'fontsize', 16, 'xlim', [7 9]);
@@ -176,7 +194,7 @@ if strcmp(full_scale_engagement_viz, 'on')
             plot(Actual_state(1,sel_Rpx), Actual_state(1,sel_Rpy), 'ob', 'LineWidth', 1, 'MarkerFaceColor', 'b')
             hold on
             plot(Actual_state(1,sel_Rtx), Actual_state(1,sel_Rty), 'or', 'LineWidth', 1, 'MarkerFaceColor', 'r')
-            title([PN_type ' ProNav, ' num2str(HE*180/pi) ' Heading error, N =' num2str(N)], 'FontSize', 16)
+            title([PN_type ' ProNav, ' num2str(HE_pitch*180/pi) ' Heading error, N =' num2str(N)], 'FontSize', 16)
             xlabel('Downrange [m]', 'FontSize', 16)
             ylabel('Altitude [m]', 'FontSize', 16)
             set(gca, 'fontsize', 16, 'xlim', [0 40000], 'ylim', [6000 12000], ...
@@ -267,8 +285,8 @@ if strcmp(zoomed_engagement_viz, 'on')
                 [Actual_state(i,sel_Rpy), Actual_state(i,sel_Rpy)+RTMy(i)], ...
                 'k--', 'LineWidth', 2);
 
-            aMx = -aM(i) * sin(lambda(i))*8;
-            aMy =  aM(i) * cos(lambda(i))*8;
+            aMx = -aM(i) * sin(lambda_pitch(i))*8;
+            aMy =  aM(i) * cos(lambda_pitch(i))*8;
 
         else
 

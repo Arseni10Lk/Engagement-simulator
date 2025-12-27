@@ -1,2 +1,5 @@
 # ignore Media
 Media/
+
+# ignore autosave
+.asv
