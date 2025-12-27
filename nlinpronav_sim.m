@@ -52,7 +52,7 @@ lambda_dot_yaw = dot(LOS_rate, u_local_up);
 % Standard ProNav: a = N * V * lambda_dot
     
 ac_pitch = Np * vel_ref * lambda_dot_pitch;
-ac_yaw   = Np * vel_ref * lambda_dot_yaw;
+ac_yaw   = -Np * vel_ref * lambda_dot_yaw;
 ac_local = [ac_yaw; ac_pitch; 0];
 
 % Global coordinates

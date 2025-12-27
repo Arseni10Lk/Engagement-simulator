@@ -6,8 +6,8 @@ close all
 
 
 % Visualisation data
-engagement_plots = 'on';
-full_scale_engagement_viz = 'off';
+engagement_plots = 'off';
+full_scale_engagement_viz = 'on';
 zoomed_engagement_viz = 'off';
 
 vid_file = 'off';
@@ -122,25 +122,61 @@ u_local_up_hist = u_local_up_hist ./ vecnorm(u_local_up_hist, 2, 2);
 lambda_dot_pitch = dot(LOS_rate, u_right_hist, 2);
 lambda_dot_yaw   = dot(LOS_rate, u_local_up_hist, 2);
 
-% Visualization
+aM = N * abs(vel_term) .* vecnorm(LOS_rate, 2, 2);
+
+sel_Rtx = 1; sel_Rty = 2; sel_Rtz = 3;
+sel_Rpx = 4; sel_Rpy = 5; sel_Rpz = 6;
+sel_Vtx = 7; sel_Vty = 8; sel_Vtz = 9;
+sel_Vpx = 10; sel_Vpy = 11; sel_Vpz = 12;
+
+
+
 dt_index = .1/t_step;
-miss_index = find(min(abs(RTM)) == abs(RTM));
+% Find minimum distance index (3D)
+[min_dist, miss_index] = min(vecnorm(RTM, 2, 2));
+
+if strcmp(engagement_plots, 'on')
+    figure(1)
+    % 3D Trajectory: Swapping Y and Z for visual clarity
+    % Plot(X, Z, Y) puts Altitude (Y) on the vertical axis
+    plot3(Actual_state_history(:,sel_Rpx), Actual_state_history(:,sel_Rpz), Actual_state_history(:,sel_Rpy), 'b', 'LineWidth', 2)
+    hold on 
+    plot3(Actual_state_history(:,sel_Rtx), Actual_state_history(:,sel_Rtz), Actual_state_history(:,sel_Rty), 'r--', 'LineWidth', 2)
+    
+    % Start points
+    plot3(Actual_state_history(1,sel_Rpx), Actual_state_history(1,sel_Rpz), Actual_state_history(1,sel_Rpy), 'ob', 'LineWidth', 2)
+    plot3(Actual_state_history(1,sel_Rtx), Actual_state_history(1,sel_Rtz), Actual_state_history(1,sel_Rty), 'or', 'LineWidth', 2)
+    
+    xlabel('Downrange [m]', 'FontSize', 12)
+    ylabel('Crossrange [m]', 'FontSize', 12) % Visual Y-axis is Physics Z
+    zlabel('Altitude [m]', 'FontSize', 12)   % Visual Z-axis is Physics Y
+    set(gca, 'fontsize', 12, 'Color', 'w');
+    grid on; axis equal; view(3)
+    legend('Missile', 'Target');
+
+    figure(2)
+    plot(time, aM./9.81, 'LineWidth', 2)
+    xlabel('Time [s]'); ylabel('Acceleration [g]');
+    set(gca, 'fontsize', 14); grid on;
+end
 
 if strcmp(engagement_plots, 'on')
 
     figure(1)
-    plot(Actual_state(1:miss_index ,sel_Rpx), Actual_state(1:miss_index ,sel_Rpy), 'LineWidth', 2)
+    % 3D Trajectory
+    plot3(Actual_state_history(1:miss_index ,sel_Rpx), Actual_state_history(1:miss_index ,sel_Rpy), Actual_state_history(1:miss_index ,sel_Rpz), 'LineWidth', 2)
     hold on 
-    plot(Actual_state(1:miss_index,sel_Rtx), Actual_state(1:miss_index,sel_Rty), 'r--', 'LineWidth', 2)
-    plot(Actual_state(1,sel_Rtx), Actual_state(1,sel_Rty), 'or', 'LineWidth', 2)
-    plot(Actual_state(1,sel_Rpx), Actual_state(1,sel_Rpy), 'ob', 'LineWidth', 2)
+    plot3(Actual_state_history(1:miss_index,sel_Rtx), Actual_state_history(1:miss_index,sel_Rty), Actual_state_history(1:miss_index,sel_Rtz), 'r--', 'LineWidth', 2)
+    plot3(Actual_state_history(1,sel_Rtx), Actual_state_history(1,sel_Rty), Actual_state_history(1,sel_Rtz), 'or', 'LineWidth', 2)
+    plot3(Actual_state_history(1,sel_Rpx), Actual_state_history(1,sel_Rpy), Actual_state_history(1,sel_Rpz), 'ob', 'LineWidth', 2)
     xlabel('Downrange [m]', 'FontSize', 16)
-    ylabel('Altitude [m]', 'FontSize', 16)
-    ylim([0 15000])
+    ylabel('Crossrange [m]', 'FontSize', 16)
+    zlabel('Altitude [m]', 'FontSize', 16)
     set(gca, 'fontsize', 16);
     set(gcf, 'color', 'w');
     grid on
-
+    axis equal
+    view(3)
 
     figure(2)
     plot(time(1:miss_index), aM(1:miss_index)./9.81, 'LineWidth', 2)
@@ -154,32 +190,31 @@ if strcmp(engagement_plots, 'on')
     plot(time, VC_hist, 'LineWidth', 2);
     xlabel('Time [s]', 'FontSize', 16)
     ylabel('Closing velocity [m/s]', 'FontSize', 16)
-    set(gca, 'fontsize', 16, 'ylim', [4000 5000]);
+    set(gca, 'fontsize', 16);
     set(gcf, 'color', 'w');
     grid on
 
     figure(4)
-    plot(time, lambda_dot*180/pi, 'b', 'LineWidth', 2);
+    plot(time, vecnorm(LOS_rate, 2, 2)*180/pi, 'b', 'LineWidth', 2);
     xlabel('Time [s]', 'FontSize', 16)
-    ylabel('LOS rate [m/s]', 'FontSize', 16)
-    set(gca, 'fontsize', 16, 'ylim', [-5 5]);
+    ylabel('LOS rate [deg/s]', 'FontSize', 16)
+    set(gca, 'fontsize', 16);
     set(gcf, 'color', 'w');
     grid on
 
     figure(5)
-    semilogy(time, RTM, 'b', 'LineWidth', 2);
+    % Plot Magnitude of RTM
+    semilogy(time, vecnorm(RTM, 2, 2), 'b', 'LineWidth', 2);
     xlabel('Time [s]', 'FontSize', 16)
     ylabel('RTM [m]', 'FontSize', 16)
-    set(gca, 'fontsize', 16, 'xlim', [7 9]);
+    set(gca, 'fontsize', 16);
     set(gcf, 'color', 'w');
     grid on
 
 end
 
 if ~(strcmp(engagement_plots, 'on') || strcmp(engagement_plots, 'off'))
-
         disp('Not acceptable value. Enter ''on'' or ''off'' for engagement_plots');
-
 end
 
 
@@ -191,33 +226,34 @@ if strcmp(full_scale_engagement_viz, 'on')
         if i == 1
             
             figure(6)
-            plot(Actual_state(1,sel_Rpx), Actual_state(1,sel_Rpy), 'ob', 'LineWidth', 1, 'MarkerFaceColor', 'b')
+            plot3(Actual_state_history(1,sel_Rpx), Actual_state_history(1,sel_Rpy), Actual_state_history(1,sel_Rpz), 'ob', 'LineWidth', 1, 'MarkerFaceColor', 'b')
             hold on
-            plot(Actual_state(1,sel_Rtx), Actual_state(1,sel_Rty), 'or', 'LineWidth', 1, 'MarkerFaceColor', 'r')
+            plot3(Actual_state_history(1,sel_Rtx), Actual_state_history(1,sel_Rty), Actual_state_history(1,sel_Rtz), 'or', 'LineWidth', 1, 'MarkerFaceColor', 'r')
             title([PN_type ' ProNav, ' num2str(HE_pitch*180/pi) ' Heading error, N =' num2str(N)], 'FontSize', 16)
             xlabel('Downrange [m]', 'FontSize', 16)
-            ylabel('Altitude [m]', 'FontSize', 16)
-            set(gca, 'fontsize', 16, 'xlim', [0 40000], 'ylim', [6000 12000], ...
-                'position', [0.1220 0.1381 0.8388 0.7119])
-            set(gcf, 'color', 'w', 'position', [10, 80, 1212, 298]);
+            ylabel('Crossrange [m]', 'FontSize', 16)
+            zlabel('Altitude [m]', 'FontSize', 16)
+            % Adjust limits for 3D
+            set(gca, 'fontsize', 16, 'xlim', [0 Rt(1)+10000], 'ylim', [0 Rt(2)+1000], 'zlim', [-5000 5000]);
+            set(gcf, 'color', 'w', 'position', [10, 80, 1212, 800]);
             grid on
             axis equal
-
+            view(3)
         end
 
         if i >= 2
             
             figure(6)
-
-            plot([Actual_state(i,sel_Rpx), Actual_state(i-dt_index,sel_Rpx)], ...
-                [Actual_state(i,sel_Rpy), Actual_state(i-dt_index,sel_Rpy)], ...
+            % Plot 3D segments
+            plot3([Actual_state_history(i,sel_Rpx), Actual_state_history(i-dt_index,sel_Rpx)], ...
+                [Actual_state_history(i,sel_Rpy), Actual_state_history(i-dt_index,sel_Rpy)], ...
+                [Actual_state_history(i,sel_Rpz), Actual_state_history(i-dt_index,sel_Rpz)], ...
                 'b-', 'LineWidth', 2)
             hold on
-            plot([Actual_state(i,sel_Rtx), Actual_state(i-dt_index,sel_Rtx)], ...
-                [Actual_state(i,sel_Rty), Actual_state(i-dt_index,sel_Rty)], ...
+            plot3([Actual_state_history(i,sel_Rtx), Actual_state_history(i-dt_index,sel_Rtx)], ...
+                [Actual_state_history(i,sel_Rty), Actual_state_history(i-dt_index,sel_Rty)], ...
+                [Actual_state_history(i,sel_Rtz), Actual_state_history(i-dt_index,sel_Rtz)], ...
                 'r-', 'LineWidth', 2)
-            set(gca, 'fontsize', 16, 'xlim', [0 40000], 'ylim', [6000 12000], ...
-                'position', [0.1220 0.1381 0.8388 0.7119]);
         end
 
         pause(0.1)
@@ -230,7 +266,7 @@ if strcmp(full_scale_engagement_viz, 'on')
     end
     
     if(strcmp(vid_file, 'on'))
-        video = VideoWriter(['Media\Full_engagement_20deg_HE_' PN_type]);
+        video = VideoWriter(['Media\Full_engagement_3D_' PN_type]);
         video.FrameRate = 30;
         open(video)
         writeVideo(video, F1)
@@ -240,9 +276,7 @@ if strcmp(full_scale_engagement_viz, 'on')
 end
 
 if ~(strcmp(full_scale_engagement_viz, 'on') || strcmp(full_scale_engagement_viz, 'off'))
-
         disp('Not acceptable value. Enter ''on'' or ''off'' for full_scale_engagement_viz');
-
 end
 
 if strcmp(zoomed_engagement_viz, 'on')
@@ -254,60 +288,76 @@ if strcmp(zoomed_engagement_viz, 'on')
 
         figure(7)
         
-        VMx = Actual_state(i, sel_Vpx);
-        VMy = Actual_state(i, sel_Vpy);
+        % Velocity Vector (3D)
+        VMx = Actual_state_history(i, sel_Vpx);
+        VMy = Actual_state_history(i, sel_Vpy);
+        VMz = Actual_state_history(i, sel_Vpz);
 
-        ph1 = quiver(Actual_state(i, sel_Rpx), Actual_state(i, sel_Rpy), VMx, VMy, ...
-            'b', 'linewidth', 2);
+        ph1 = quiver3(Actual_state_history(i, sel_Rpx), Actual_state_history(i, sel_Rpy), Actual_state_history(i, sel_Rpz), ...
+            VMx, VMy, VMz, 'b', 'linewidth', 2, 'AutoScaleFactor', 0.5);
         hold on
         grid on
+        axis equal
+        view(3)
 
         if i >= 2
-            
-            plot([Actual_state(i,sel_Rtx), Actual_state(i-dt_index,sel_Rtx)], ...
-                [Actual_state(i,sel_Rty), Actual_state(i-dt_index,sel_Rty)], ...
+            % Trajectory tails (3D)
+            plot3([Actual_state_history(i,sel_Rtx), Actual_state_history(i-dt_index,sel_Rtx)], ...
+                [Actual_state_history(i,sel_Rty), Actual_state_history(i-dt_index,sel_Rty)], ...
+                [Actual_state_history(i,sel_Rtz), Actual_state_history(i-dt_index,sel_Rtz)], ...
                 'r-', 'LineWidth', 2)
-            plot([Actual_state(i,sel_Rpx), Actual_state(i-dt_index,sel_Rpx)], ...
-                [Actual_state(i,sel_Rpy), Actual_state(i-dt_index,sel_Rpy)], ...
+            plot3([Actual_state_history(i,sel_Rpx), Actual_state_history(i-dt_index,sel_Rpx)], ...
+                [Actual_state_history(i,sel_Rpy), Actual_state_history(i-dt_index,sel_Rpy)], ...
+                [Actual_state_history(i,sel_Rpz), Actual_state_history(i-dt_index,sel_Rpz)], ...
                 'b-', 'LineWidth', 2)
-
         end
 
+        % Acceleration Vector Logic (3D Cross Product)
+        % We calculate the direction using Cross(Omega, V)
+        
+        curr_Omega = LOS_rate(i, :);
+        
         if strcmp(PN_type, 'Pure')
-
-            Heading_pursuer = atan2(VMy, VMx);
-            aMx = -aM(i) * sin(Heading_pursuer)*8;
-            aMy = aM(i) * cos(Heading_pursuer)*8;
-
+            curr_V = [VMx, VMy, VMz];
         elseif strcmp(PN_type, 'True')
-            
-            ph2 = plot([Actual_state(i,sel_Rpx), Actual_state(i,sel_Rpx)+RTMx(i)], ...
-                [Actual_state(i,sel_Rpy), Actual_state(i,sel_Rpy)+RTMy(i)], ...
+            % Draw LOS line
+            ph2 = plot3([Actual_state_history(i,sel_Rpx), Actual_state_history(i,sel_Rpx)+RTM(i,1)], ...
+                        [Actual_state_history(i,sel_Rpy), Actual_state_history(i,sel_Rpy)+RTM(i,2)], ...
+                        [Actual_state_history(i,sel_Rpz), Actual_state_history(i,sel_Rpz)+RTM(i,3)], ...
                 'k--', 'LineWidth', 2);
-
-            aMx = -aM(i) * sin(lambda_pitch(i))*8;
-            aMy =  aM(i) * cos(lambda_pitch(i))*8;
-
+            curr_V = -VTM(i,:); % Closing velocity vector
         else
-
             disp('PN_type must be ''True'' or ''Pure''');
-
+        end
+        
+        % Calculate Acceleration Vector (Direction & Magnitude)
+        acc_vec = cross(curr_Omega, curr_V) * N;
+        
+        % Scale acceleration for visualization
+        if norm(acc_vec) > 0
+             acc_vec = acc_vec / norm(acc_vec) * 1000; % Scale for visibility
         end
 
-        ph3 = quiver(Actual_state(i, sel_Rpx), Actual_state(i, sel_Rpy), aMx, aMy, ...
+        ph3 = quiver3(Actual_state_history(i, sel_Rpx), Actual_state_history(i, sel_Rpy), Actual_state_history(i, sel_Rpz), ...
+            acc_vec(1), acc_vec(2), acc_vec(3), ...
             'k', 'linewidth', 2);
 
-        ph4 = plot(Actual_state(i, sel_Rpx), Actual_state(i, sel_Rpy), ...
+        ph4 = plot3(Actual_state_history(i, sel_Rpx), Actual_state_history(i, sel_Rpy), Actual_state_history(i, sel_Rpz), ...
             'b.', 'LineWidth', 2, 'MarkerSize', 20);
+        
+        % Dynamic limits
+        cx = Actual_state_history(i, sel_Rpx);
+        cy = Actual_state_history(i, sel_Rpy);
+        cz = Actual_state_history(i, sel_Rpz);
 
-        set(gca, 'xlim', [Actual_state(i, sel_Rpx)-4e3, Actual_state(i, sel_Rpx)+4e3], ...
-            'ylim', [Actual_state(i, sel_Rpy)-4e3, Actual_state(i, sel_Rpy)+4e3]);
-        set(gcf, 'color', 'w', 'position', [360 278 560 420]); % ?
-        title(['Engagement Visualization - ' PN_type ' ProNav'], ...
-            'FontSize', 14);
+        set(gca, 'xlim', [cx-4e3, cx+4e3], ...
+                 'ylim', [cy-4e3, cy+4e3], ...
+                 'zlim', [cz-4e3, cz+4e3]);
+                 
+        set(gcf, 'color', 'w', 'position', [360 278 560 420]); 
+        title(['Engagement Visualization - ' PN_type ' ProNav'], 'FontSize', 14);
 
         pause(0.1);
-
 
         if strcmp(vid_file, 'on')
             F2(k) = getframe(gcf);
@@ -325,7 +375,7 @@ if strcmp(zoomed_engagement_viz, 'on')
     end
 
     if(strcmp(vid_file, 'on'))
-        video2 = VideoWriter(['Media\Zoomed_engagement_20deg_HE_' PN_type]);
+        video2 = VideoWriter(['Media\Zoomed_engagement_3D_' PN_type]);
         video2.FrameRate = 30;
         open(video2)
         writeVideo(video2, F2)
@@ -335,8 +385,5 @@ if strcmp(zoomed_engagement_viz, 'on')
 end
 
 if ~(strcmp(zoomed_engagement_viz, 'on') || strcmp(zoomed_engagement_viz, 'off'))
-
         disp('Not acceptable value. Enter ''on'' or ''off'' for zoomed_engagement_viz');
-
 end
-
