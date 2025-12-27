@@ -2,4 +2,4 @@
 Media/
 
 # ignore autosave
-.asv
+*.asv
