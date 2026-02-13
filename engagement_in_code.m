@@ -6,14 +6,14 @@ close all
 
 
 % Visualisation data
-engagement_plots = 'off';
+engagement_plots = 'on';
 full_scale_engagement_viz = 'on';
-zoomed_engagement_viz = 'off';
+zoomed_engagement_viz = 'on';
 
-vid_file = 'off';
+vid_file = 'on';
 
 % initial conditions
-PN_type = 'True';
+PN_type = 'Pure';
 at = [0, 0, 0]; % x y z
 
 HE_pitch = -20*pi/180;
@@ -64,6 +64,9 @@ Con_vs_t = zeros(length(y0), length_time);
 % Integration with RK4
 Actual_state = y0;
 Con_vs_t(:, 1) = Actual_state;
+
+prev_range = norm(y0(1:3) - y0(4:6));
+
 for j = 1 : length_time-1
 
     s1 = nlinpronav_sim(Actual_state, N, at, PN_type);
@@ -72,9 +75,23 @@ for j = 1 : length_time-1
     s4 = nlinpronav_sim(Actual_state + t_step*s3, N, at, PN_type);
 
     Actual_state = Actual_state + t_step*(s1+2*s2+2*s3+s4)/6;
+    
+    Rt_curr = Actual_state(1:3);
+    Rp_curr = Actual_state(4:6);
+    curr_range = norm(Rt_curr - Rp_curr);
+
+    if curr_range > prev_range
+        % Trim the empty zeros from the pre-allocated array
+        Con_vs_t = Con_vs_t(:, 1:j);
+        disp(['Intercept occurred at t = ' num2str(j*t_step) ' sec']);
+        break;
+    end
 
     Con_vs_t(:, j + 1) = Actual_state;
+
+    prev_range = curr_range;
 end
+
 
 Actual_state_history = Con_vs_t';
 
@@ -129,6 +146,7 @@ sel_Rpx = 4; sel_Rpy = 5; sel_Rpz = 6;
 sel_Vtx = 7; sel_Vty = 8; sel_Vtz = 9;
 sel_Vpx = 10; sel_Vpy = 11; sel_Vpz = 12;
 
+time = time(1:length(aM));
 
 
 dt_index = .1/t_step;
@@ -136,47 +154,47 @@ dt_index = .1/t_step;
 [min_dist, miss_index] = min(vecnorm(RTM, 2, 2));
 
 if strcmp(engagement_plots, 'on')
-    figure(1)
-    % 3D Trajectory: Swapping Y and Z for visual clarity
-    % Plot(X, Z, Y) puts Altitude (Y) on the vertical axis
-    plot3(Actual_state_history(:,sel_Rpx), Actual_state_history(:,sel_Rpz), Actual_state_history(:,sel_Rpy), 'b', 'LineWidth', 2)
-    hold on 
-    plot3(Actual_state_history(:,sel_Rtx), Actual_state_history(:,sel_Rtz), Actual_state_history(:,sel_Rty), 'r--', 'LineWidth', 2)
-    
-    % Start points
-    plot3(Actual_state_history(1,sel_Rpx), Actual_state_history(1,sel_Rpz), Actual_state_history(1,sel_Rpy), 'ob', 'LineWidth', 2)
-    plot3(Actual_state_history(1,sel_Rtx), Actual_state_history(1,sel_Rtz), Actual_state_history(1,sel_Rty), 'or', 'LineWidth', 2)
-    
-    xlabel('Downrange [m]', 'FontSize', 12)
-    ylabel('Crossrange [m]', 'FontSize', 12) % Visual Y-axis is Physics Z
-    zlabel('Altitude [m]', 'FontSize', 12)   % Visual Z-axis is Physics Y
-    set(gca, 'fontsize', 12, 'Color', 'w');
-    grid on; axis equal; view(3)
-    legend('Missile', 'Target');
-
-    figure(2)
-    plot(time, aM./9.81, 'LineWidth', 2)
-    xlabel('Time [s]'); ylabel('Acceleration [g]');
-    set(gca, 'fontsize', 14); grid on;
-end
-
-if strcmp(engagement_plots, 'on')
 
     figure(1)
-    % 3D Trajectory
-    plot3(Actual_state_history(1:miss_index ,sel_Rpx), Actual_state_history(1:miss_index ,sel_Rpy), Actual_state_history(1:miss_index ,sel_Rpz), 'LineWidth', 2)
+    
+    % 1. Plot Missile Trajectory (Blue)
+    % Note: Using (:, sel_Rpz) for Visual Y, and (:, sel_Rpy) for Visual Z (Altitude)
+    plot3(Actual_state_history(1:miss_index, sel_Rpx), ...
+          Actual_state_history(1:miss_index, sel_Rpz), ...
+          Actual_state_history(1:miss_index, sel_Rpy), ...
+          'b', 'LineWidth', 2)
     hold on 
-    plot3(Actual_state_history(1:miss_index,sel_Rtx), Actual_state_history(1:miss_index,sel_Rty), Actual_state_history(1:miss_index,sel_Rtz), 'r--', 'LineWidth', 2)
-    plot3(Actual_state_history(1,sel_Rtx), Actual_state_history(1,sel_Rty), Actual_state_history(1,sel_Rtz), 'or', 'LineWidth', 2)
-    plot3(Actual_state_history(1,sel_Rpx), Actual_state_history(1,sel_Rpy), Actual_state_history(1,sel_Rpz), 'ob', 'LineWidth', 2)
+    
+    % 2. Plot Target Trajectory (Red Dashed)
+    plot3(Actual_state_history(1:miss_index, sel_Rtx), ...
+          Actual_state_history(1:miss_index, sel_Rtz), ...
+          Actual_state_history(1:miss_index, sel_Rty), ...
+          'r--', 'LineWidth', 2)
+          
+    % 3. Plot Start Points (Circles)
+    % Target Start
+    plot3(Actual_state_history(1, sel_Rtx), ...
+          Actual_state_history(1, sel_Rtz), ...
+          Actual_state_history(1, sel_Rty), ...
+          'or', 'LineWidth', 2, 'MarkerFaceColor', 'r')
+    % Missile Start
+    plot3(Actual_state_history(1, sel_Rpx), ...
+          Actual_state_history(1, sel_Rpz), ...
+          Actual_state_history(1, sel_Rpy), ...
+          'ob', 'LineWidth', 2, 'MarkerFaceColor', 'b')
+
+    % 4. Correct Labels and View
     xlabel('Downrange [m]', 'FontSize', 16)
-    ylabel('Crossrange [m]', 'FontSize', 16)
-    zlabel('Altitude [m]', 'FontSize', 16)
+    ylabel('Crossrange [m]', 'FontSize', 16) % Visual Y is now Crossrange
+    zlabel('Altitude [m]', 'FontSize', 16)   % Visual Z is now Altitude
+    
+    legend('Missile', 'Target', 'Target Start', 'Missile Start', 'Location', 'best')
+    
     set(gca, 'fontsize', 16);
     set(gcf, 'color', 'w');
     grid on
     axis equal
-    view(3)
+    view(3) % Standard 3D view
 
     figure(2)
     plot(time(1:miss_index), aM(1:miss_index)./9.81, 'LineWidth', 2)
@@ -221,45 +239,73 @@ end
 % Animation
 if strcmp(full_scale_engagement_viz, 'on')
 
+    % 1. Setup Figure Window
+    figure(6)
+    clf;
+    set(gcf, 'Units', 'pixels', 'Position', [100, 100, 1200, 800]);
+    set(gcf, 'color', 'w');
+
+    % 2. Calculate STATIC Limits (Global)
+    % Swapping Y and Z so Altitude is Vertical (Z-axis in plot)
+    all_X = [Actual_state_history(:, sel_Rpx); Actual_state_history(:, sel_Rtx)];
+    all_Y = [Actual_state_history(:, sel_Rpz); Actual_state_history(:, sel_Rtz)]; % Visual Y is Crossrange
+    all_Z = [Actual_state_history(:, sel_Rpy); Actual_state_history(:, sel_Rty)]; % Visual Z is Altitude
+
+    margin = 0.05;
+    xlim_fixed = [min(all_X), max(all_X)] + [-1, 1] * (range(all_X)*margin + 100);
+    ylim_fixed = [min(all_Y), max(all_Y)] + [-1, 1] * (range(all_Y)*margin + 100);
+    zlim_fixed = [min(all_Z), max(all_Z)] + [-1, 1] * (range(all_Z)*margin + 100);
+
+    % 3. Apply Initial Settings
+    title([PN_type ' ProNav, ' num2str(HE_pitch*180/pi) ' Heading error, N =' num2str(N)], 'FontSize', 16)
+    xlabel('Downrange [m]', 'FontSize', 16)
+    ylabel('Crossrange [m]', 'FontSize', 16)
+    zlabel('Altitude [m]', 'FontSize', 16)
+    
+    grid on; axis equal; view(3);
+    set(gca, 'fontsize', 16, 'xlim', xlim_fixed, 'ylim', ylim_fixed, 'zlim', zlim_fixed);
+    hold on
+
+    % 4. Plot Start Points
+    plot3(Actual_state_history(1,sel_Rpx), Actual_state_history(1,sel_Rpz), Actual_state_history(1,sel_Rpy), ...
+        'ob', 'LineWidth', 2, 'MarkerFaceColor', 'b');
+    plot3(Actual_state_history(1,sel_Rtx), Actual_state_history(1,sel_Rtz), Actual_state_history(1,sel_Rty), ...
+        'or', 'LineWidth', 2, 'MarkerFaceColor', 'r');
+
+    % 5. Animation Loop
     k=1;
-    for i = 1 : dt_index : (miss_index + dt_index)
-        if i == 1
+    % FIX: Limit loop to available data size
+    max_ind = min(miss_index, size(Actual_state_history, 1));
+
+    for i = 1 : dt_index : max_ind
+        
+        if i > dt_index
+            prev = i - dt_index;
             
-            figure(6)
-            plot3(Actual_state_history(1,sel_Rpx), Actual_state_history(1,sel_Rpy), Actual_state_history(1,sel_Rpz), 'ob', 'LineWidth', 1, 'MarkerFaceColor', 'b')
-            hold on
-            plot3(Actual_state_history(1,sel_Rtx), Actual_state_history(1,sel_Rty), Actual_state_history(1,sel_Rtz), 'or', 'LineWidth', 1, 'MarkerFaceColor', 'r')
-            title([PN_type ' ProNav, ' num2str(HE_pitch*180/pi) ' Heading error, N =' num2str(N)], 'FontSize', 16)
-            xlabel('Downrange [m]', 'FontSize', 16)
-            ylabel('Crossrange [m]', 'FontSize', 16)
-            zlabel('Altitude [m]', 'FontSize', 16)
-            % Adjust limits for 3D
-            set(gca, 'fontsize', 16, 'xlim', [0 Rt(1)+10000], 'ylim', [0 Rt(2)+1000], 'zlim', [-5000 5000]);
-            set(gcf, 'color', 'w', 'position', [10, 80, 1212, 800]);
-            grid on
-            axis equal
-            view(3)
+            % Plot Segments (Swapping Y/Z)
+            % Missile (Blue)
+            plot3([Actual_state_history(i,sel_Rpx), Actual_state_history(prev,sel_Rpx)], ...
+                [Actual_state_history(i,sel_Rpz), Actual_state_history(prev,sel_Rpz)], ...
+                [Actual_state_history(i,sel_Rpy), Actual_state_history(prev,sel_Rpy)], ...
+                'b-', 'LineWidth', 2);
+            
+            % Target (Red)
+            plot3([Actual_state_history(i,sel_Rtx), Actual_state_history(prev,sel_Rtx)], ...
+                [Actual_state_history(i,sel_Rtz), Actual_state_history(prev,sel_Rtz)], ...
+                [Actual_state_history(i,sel_Rty), Actual_state_history(prev,sel_Rty)], ...
+                'r-', 'LineWidth', 2);
         end
 
-        if i >= 2
-            
-            figure(6)
-            % Plot 3D segments
-            plot3([Actual_state_history(i,sel_Rpx), Actual_state_history(i-dt_index,sel_Rpx)], ...
-                [Actual_state_history(i,sel_Rpy), Actual_state_history(i-dt_index,sel_Rpy)], ...
-                [Actual_state_history(i,sel_Rpz), Actual_state_history(i-dt_index,sel_Rpz)], ...
-                'b-', 'LineWidth', 2)
-            hold on
-            plot3([Actual_state_history(i,sel_Rtx), Actual_state_history(i-dt_index,sel_Rtx)], ...
-                [Actual_state_history(i,sel_Rty), Actual_state_history(i-dt_index,sel_Rty)], ...
-                [Actual_state_history(i,sel_Rtz), Actual_state_history(i-dt_index,sel_Rtz)], ...
-                'r-', 'LineWidth', 2)
-        end
-
-        pause(0.1)
+        drawnow; 
+        % pause(0.01); % Uncomment if it's too fast
 
         if strcmp(vid_file, 'on')
-            F1(k) = getframe(gcf);
+            frame = getframe(gcf);
+            % Force resize current frame to match the first frame exactly
+            if k > 1
+                frame.cdata = imresize(frame.cdata, size(F1(1).cdata, 1:2));
+            end
+            F1(k) = frame;
             k = k+1;
         end
 
@@ -284,9 +330,11 @@ if strcmp(zoomed_engagement_viz, 'on')
     k=1;
     title('');
 
-    for i = 1 : dt_index : (miss_index + dt_index)
+    for i = 1 : dt_index : size(Actual_state_history, 1)
 
         figure(7)
+        
+        set(gcf, 'Units', 'Normalized', 'OuterPosition', [0.1, 0, 0.5, 1])
         
         % Velocity Vector (3D)
         VMx = Actual_state_history(i, sel_Vpx);
@@ -294,7 +342,7 @@ if strcmp(zoomed_engagement_viz, 'on')
         VMz = Actual_state_history(i, sel_Vpz);
 
         ph1 = quiver3(Actual_state_history(i, sel_Rpx), Actual_state_history(i, sel_Rpy), Actual_state_history(i, sel_Rpz), ...
-            VMx, VMy, VMz, 'b', 'linewidth', 2, 'AutoScaleFactor', 0.5);
+            VMx, VMy, VMz, 'b', 'linewidth', 2, 'AutoScaleFactor', 1);
         hold on
         grid on
         axis equal
@@ -354,7 +402,7 @@ if strcmp(zoomed_engagement_viz, 'on')
                  'ylim', [cy-4e3, cy+4e3], ...
                  'zlim', [cz-4e3, cz+4e3]);
                  
-        set(gcf, 'color', 'w', 'position', [360 278 560 420]); 
+        set(gcf, 'color', 'w');
         title(['Engagement Visualization - ' PN_type ' ProNav'], 'FontSize', 14);
 
         pause(0.1);
