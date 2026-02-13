@@ -11,7 +11,7 @@ The program simulates the engagement scenarios in 3 steps:
 * Application of Pro-Nav laws and integration with RK4
 * Post-processing output
 
-In case program compiles with the following initial conditions:
+In case the program compiles with the following initial conditions:
 
 Parameter | Value
 -----|---------
@@ -20,12 +20,12 @@ Target acceleration | 0
 Heading error | -20°
 Proportianility const N | 3
 ∠(Target Velocity, horizon) |  0
-Initial position of pursuer | (0 , 10000) m
+Initial position of pursuer | (0, 10000) m
 Initial position of target | (40000,10000) m
 Pursuer speed | 4000 m/s
 Target speed | 1000 m/s
 
-Then we can obtain two general visualizations:
+Then we can obtain two general visualisations:
 Full engagement:
 
 https://github.com/Arseni10Lk/Engagement-simulator/assets/141524111/d9014651-1566-4b15-bf9b-2f820ea5f915
@@ -36,7 +36,7 @@ https://github.com/Arseni10Lk/Engagement-simulator/assets/141524111/b66eb4b1-830
 
 
 
-And visualizations of particular parameter values:
+And visualisations of particular parameter values:
 Parameter | Graph
 -----|---------
 Line of sight angle change rate | <img src = "./Media/LOSrate.png" alt = "Rate of change of Line of Sight angle" width = 500>
@@ -44,9 +44,9 @@ Pursuer to target distance (on a log scale) | <img src = "./Media/RTM.png" alt =
 Closing Velocity | <img src = "./Media/VC.png" alt = "Closing velocity" width = 500>
 Pursuer acceleration | <img src = "./Media/aP.png" alt = "Pursuer acceleration" width = 500>
 
-In order to see results for different initial conditions you have to change the first section with the initial conditions (obviously) and also the third section wth visualizations.
+In order to see results for different initial conditions, you have to change the first section with the initial conditions (obviously) and also the third section wth visualizations.
 
-For example, by editing several lines of the code we can obtain animations for the same initial conditions, but with
+For example, by editing several lines of the code, we can obtain animations for the same initial conditions, but with
 Parameter | Value
 -----|---------
 Pro-Nav type | Pure
@@ -54,7 +54,7 @@ Target acceleration | 20g
 
 And let the acceleration be perpendicular to the velocity vector.
 
-Thus, the results of the siulation will look in the following way:
+Thus, the results of the simulation will look as follows:
 
 Full engagement:
 
@@ -66,5 +66,10 @@ https://github.com/Arseni10Lk/Engagement-simulator/assets/141524111/58784efc-ea6
 
 ## 3D Simulations ##
 
-To be added...
+For 3D, all parameters remained the same; HE was set to -20° for the new dimension.
 
+Those are two new visualisations:
+
+https://github.com/user-attachments/assets/6100ec7a-f1a6-4423-96dc-fc970253a4c9
+
+https://github.com/user-attachments/assets/210d11ca-212d-4b25-b04f-6fbf1aba6a02
