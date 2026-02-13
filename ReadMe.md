@@ -1,6 +1,10 @@
 # Engagement-simulator #
 
-The simulation occurs in 2D only, assumes head-on collision and does not consider manoeuvrability limitations of a pursuer. 
+The simulation assumes a head-on collision and does not consider the manoeuvrability limitations of a pursuer. 
+
+Its first version was in 2D only. The current code works in 3D; the previous version can be accessed using the commit history.
+
+## 2D Simulations ##
 
 The program simulates the engagement scenarios in 3 steps: 
 * Setting initial condition
@@ -60,4 +64,7 @@ Engagement zoomed on the pursuer:
 
 https://github.com/Arseni10Lk/Engagement-simulator/assets/141524111/58784efc-ea69-43b9-a663-0f0741030e5a
 
+## 3D Simulations ##
+
+To be added...
 
